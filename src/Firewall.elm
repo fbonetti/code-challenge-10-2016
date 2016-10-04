@@ -1,4 +1,4 @@
-module Firewall exposing (parseLine, defaultConfig)
+module Firewall exposing (parseLines)
 
 import String
 import Dict exposing (Dict)
@@ -18,6 +18,27 @@ defaultConfig =
   , mappings = Dict.fromList []
   , redirects = Dict.fromList []
   }
+
+parseLines : String -> String
+parseLines lines =
+  List.foldl
+    (\line ( output, config ) ->
+        let
+          ( output', config' ) = parseLine config line
+        in
+          case output' of
+            Just str ->
+              ( output ++ "\n" ++ str, config' )
+            Nothing ->
+              ( output, config' )
+
+    )
+    ( "", defaultConfig )
+    (String.lines lines)
+
+  |> fst
+
+
 
 parseLine : Config -> String -> ( Maybe String, Config )
 parseLine ({ port', mappings, redirects } as config) line =
