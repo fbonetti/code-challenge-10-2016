@@ -61,7 +61,7 @@ parseLine ({ port', mappings, redirects } as config) line =
           else
             if destinationIp == routerPublicAddress then
               let
-                key = fullSource ++ "-" ++ "53.0.0.1" ++ ":" ++ (toString destinationPort)
+                key = fullSource ++ "-" ++ routerPublicAddressStr ++ ":" ++ (toString destinationPort)
               in
                 case Dict.get key redirects of
                   Just redirect ->
@@ -85,7 +85,7 @@ parseLine ({ port', mappings, redirects } as config) line =
                   else
                     let
                       str = String.join " " ["Mapped", fullSource, "to", fullDestination, "assigned", (toString port')]
-                      redirectKey = fullDestination ++ "-53.0.0.1" ++ ":" ++ (toString port')
+                      redirectKey = fullDestination ++ "-" ++ routerPublicAddressStr ++ ":" ++ (toString port')
                       config' =
                         { port' = port' + 1
                         , mappings = Dict.insert key port' mappings
@@ -131,15 +131,20 @@ isValidPort port' =
 
 isLocalIP : IPAddress -> Bool
 isLocalIP ip =
-  -- 167772160 == "10.0.0.0"
-  -- 184549375 == "10.255.255.255"
-  ip >= 167772160 && ip <= 184549375
+  let
+    lowerBound = parseIPAddress "10.0.0.0" |> Maybe.withDefault 0
+    upperBound = parseIPAddress "10.255.255.255" |> Maybe.withDefault 0
+  in
+    ip >= lowerBound && ip <= upperBound
 
 isExternalIP : IPAddress -> Bool
 isExternalIP =
   not << isLocalIP
 
+routerPublicAddressStr : String
+routerPublicAddressStr =
+  "53.0.0.1"
+
 routerPublicAddress : IPAddress
 routerPublicAddress =
-  -- "53.0.0.1"
-  889192449
+  parseIPAddress routerPublicAddressStr |> Maybe.withDefault 0
